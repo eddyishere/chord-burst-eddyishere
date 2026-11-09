@@ -328,19 +328,21 @@
   }
 
   function isQi(lm, f) {
-    // 七: thumb + index + middle tips pinched together (others folded)
+    // 七: true pinch — thumb clearly involved + index/middle out, ring/pinky in,
+    // tips tightly clustered (stricter than old 1.15× so a plain D "2 fingers"
+    // with a nearby thumb does not become B).
+    if (!f.thumb || !f.index || !f.middle) return false;
     if (f.ring || f.pinky) return false;
     const tips = [lm[TIP.THUMB], lm[TIP.INDEX], lm[TIP.MIDDLE]];
     const handScale = Math.max(0.05, dist2(lm[WRIST], lm[MCP.INDEX]));
     const dTI = dist2(tips[0], tips[1]);
     const dTM = dist2(tips[0], tips[2]);
     const dIM = dist2(tips[1], tips[2]);
-    const clustered =
-      dTI < handScale * 1.15 &&
-      dTM < handScale * 1.25 &&
-      dIM < handScale * 1.15;
-    // Also accept classic "OK-ish" pinch of three tips near each other
-    return clustered;
+    return (
+      dTI < handScale * 0.8 &&
+      dTM < handScale * 0.85 &&
+      dIM < handScale * 0.8
+    );
   }
 
   /**
@@ -350,15 +352,27 @@
    */
   function classifyShape(lm, handednessLabel, mode) {
     const f = fingerFlags(lm, handednessLabel);
+    const n = countNonThumb(f);
 
+    // 六 first: unambiguous thumb+pinky only
     if (isLiu(f)) {
       return mode === "root" ? "A" : "Half-dim7";
     }
-    if (mode === "root" && isQi(lm, f)) {
+
+    // 七 only when it looks like a real pinch candidate — never before
+    // clear 1–5 finger counts. Two extended fingers (D / Minor) must win
+    // unless thumb is involved and tips are tightly clustered.
+    if (
+      mode === "root" &&
+      f.thumb &&
+      !f.ring &&
+      !f.pinky &&
+      n <= 2 &&
+      isQi(lm, f)
+    ) {
       return "B";
     }
 
-    const n = countNonThumb(f);
     // Prefer non-thumb count for 1–4; 5 = open hand (thumb may also be up)
     let count = n;
     if (n === 4 && f.thumb) count = 5;
@@ -483,8 +497,9 @@
 
   function toCanvas(lm) {
     const { ox, oy, dw, dh } = coverMapping();
-    // Video is CSS-mirrored; landmarks are in camera space — mirror X for overlay
-    return { x: ox + (1 - lm.x) * dw, y: oy + lm.y * dh };
+    // Video + overlay both use CSS scaleX(-1). Landmarks stay in camera space —
+    // do NOT flip X here or the skeleton doubles-mirrors onto the wrong side.
+    return { x: ox + lm.x * dw, y: oy + lm.y * dh };
   }
 
   /** Normalize MediaPipe connection entries: {start,end} objects OR [a,b] pairs. */
