@@ -37,3 +37,7 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          # Large vendored MediaPipe files can sit in syncing_files past the
+          # 10-minute default; aborting cancels a deploy that is still copying.
+          timeout: 1800000
