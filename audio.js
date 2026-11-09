@@ -16,7 +16,7 @@
   };
 
   const ATTACK = 0.035;   // ~35ms soft attack
-  const RELEASE = 0.12;   // ~120ms gentle release
+  const RELEASE = 0.08;   // ~80ms quick but not clicky release
   const MASTER_GAIN = 0.18;
   const ROOT_PEAK = 0.42;
   const PARTIAL_PEAK = 0.24;

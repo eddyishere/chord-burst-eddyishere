@@ -3,8 +3,8 @@
  * Left → root · Right → quality · stable dual-hand gate · Web Audio
  *
  * Stability stack (inspired by fingerpose post-filter + EMA landmark smoothing):
- * 1) confidence ≥ 0.6  2) EMA joints  3) majority-vote buffer
- * 4) 4-frame hysteresis per hand  5) both-hands state machine before audio
+ * 1) confidence ≥ 0.5  2) EMA joints  3) majority-vote buffer
+ * 4) 2-frame hysteresis per hand  5) both-hands state machine before audio
  */
 (function () {
   // Prefer vendored assets (HK-friendly); CDN only as last-resort import fallback
@@ -28,10 +28,10 @@
   const QUALITIES = ["Major", "Minor", "Maj7", "m7", "Dom7", "Half-dim7"];
 
   // —— Tracking tunables (top-level so they are easy to tweak) ——
-  const CONFIDENCE = 0.6;          // ignore HandLandmarker hands below this score
-  const HYSTERESIS_FRAMES = 4;     // enter/exit a gesture only after ~4 consistent frames
-  const EMA_ALPHA = 0.4;           // landmark blend: higher = snappier, lower = smoother
-  const VOTE_BUFFER_SIZE = 7;      // sliding window for majority gesture vote
+  const CONFIDENCE = 0.5;          // ignore HandLandmarker hands below this score
+  const HYSTERESIS_FRAMES = 2;     // enter/exit a gesture only after ~2 consistent frames
+  const EMA_ALPHA = 0.55;          // landmark blend: higher = snappier, lower = smoother
+  const VOTE_BUFFER_SIZE = 3;      // sliding window for majority gesture vote
 
   const TIP = { THUMB: 4, INDEX: 8, MIDDLE: 12, RING: 16, PINKY: 20 };
   const PIP = { INDEX: 6, MIDDLE: 10, RING: 14, PINKY: 18 };
@@ -207,7 +207,7 @@
 
   /**
    * Hysteresis / lag gate: switch stable gesture only after HYSTERESIS_FRAMES
-   * of the same voted label (including null → clear). Blocks 1–3 frame flicker.
+   * of the same voted label (including null → clear). Blocks 1-frame flicker.
    */
   function applyHysteresis(tracker, voted) {
     if (voted === tracker.stable) {
