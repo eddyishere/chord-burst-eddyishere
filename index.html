@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chord Burst</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="sunburst" aria-hidden="true"></div>
+  <div class="halftone" aria-hidden="true"></div>
+
+  <header class="top-bar">
+    <h1 class="title">Chord Burst</h1>
+    
+  </header>
+
+  <div id="banner" class="banner hidden" role="status"></div>
+
+  <aside class="panel panel-left" id="root-panel" aria-label="Root notes">
+    <button type="button" class="pill root-pill" data-root="C" style="--c:#E0B83A">C</button>
+    <button type="button" class="pill root-pill" data-root="D" style="--c:#00897B">D</button>
+    <button type="button" class="pill root-pill" data-root="E" style="--c:#C62828">E</button>
+    <button type="button" class="pill root-pill" data-root="F" style="--c:#1565C0">F</button>
+    <button type="button" class="pill root-pill" data-root="G" style="--c:#E0B83A">G</button>
+    <button type="button" class="pill root-pill" data-root="A" style="--c:#00897B">A</button>
+    <button type="button" class="pill root-pill" data-root="B" style="--c:#C62828">B</button>
+  </aside>
+
+  <aside class="panel panel-right" id="quality-panel" aria-label="Chord qualities">
+    <button type="button" class="pill quality-pill" data-quality="Major" style="--c:#00897B">Major</button>
+    <button type="button" class="pill quality-pill" data-quality="Minor" style="--c:#C62828">Minor</button>
+    <button type="button" class="pill quality-pill" data-quality="Maj7" style="--c:#E0B83A">Maj7</button>
+    <button type="button" class="pill quality-pill" data-quality="m7" style="--c:#1565C0">m7</button>
+    <button type="button" class="pill quality-pill" data-quality="Dom7" style="--c:#00897B">Dom7</button>
+    <button type="button" class="pill quality-pill" data-quality="Half-dim7" style="--c:#C62828">Half-dim7</button>
+  </aside>
+
+  <main class="stage">
+    <div class="explosion-frame" id="explosion-frame">
+      <div class="explosion-inner">
+        <video id="webcam" playsinline autoplay muted></video>
+        <canvas id="overlay"></canvas>
+        <div class="rays" aria-hidden="true"></div>
+        <div class="start-overlay" id="start-overlay">
+          <button type="button" class="btn-start" id="btn-start">START CAMERA</button>
+          <p class="start-hint">Allow camera · both hands stable (~4 frames) · or click panels / keyboard</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="chord-dock">
+    <div class="chord-name" id="chord-name">—</div>
+    <div class="status-row">
+      <span class="status-pill" id="status-pill">Ready</span>
+      <span class="gesture-readout" id="gesture-readout">L: — · R: —</span>
+    </div>
+  </footer>
+
+
+  <div id="guide-mascot" class="guide-mascot" aria-hidden="false">
+    <div class="mascot-bubble" id="mascot-bubble">Hi！跟住滑鼠郁 · 撳我換提示</div>
+    <div class="mascot-inner">
+      <img id="mascot-img" class="mascot-body" src="assets/eddy-guitar.png" alt="Guitar guide character" draggable="false" />
+    </div>
+  </div>
+
+  <p class="site-credit" aria-label="Site credit">Designed by Eddy Cheung</p>
+
+  <button type="button" id="btn-help" class="help-badge" aria-label="遊戲規則 / Game rules">?</button>
+
+  <div id="overlay-rules" class="overlay rules-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="rules-title">
+    <div class="rules-card">
+      <div class="rules-head">
+        <h2 id="rules-title">遊戲規則 / Rules</h2>
+        <div class="lang-tabs" role="tablist">
+          <button type="button" class="lang-tab active" data-lang="zh" role="tab" aria-selected="true">中文</button>
+          <button type="button" class="lang-tab" data-lang="en" role="tab" aria-selected="false">EN</button>
+        </div>
+        <button type="button" id="btn-rules-close" class="rules-close" aria-label="關閉">×</button>
+      </div>
+      <div class="rules-body" id="rules-zh" lang="zh-Hant">
+        <ol>
+          <li>按 <strong>START CAMERA</strong> 允許鏡頭（建議用「打開」本機伺服器，唔好用 file://）。</li>
+          <li><strong>左手</strong>選根音：1–5 指＝C–G；「六」（拇指＋尾指）＝A；「七」（拇＋食＋中指尖合）＝B。</li>
+          <li><strong>右手</strong>選屬性：1＝Major · 2＝Minor · 3＝Maj7 · 4＝m7 · 5＝Dom7；「六」＝Half-dim7。</li>
+          <li>雙手同時穩定識別（置信度≥0.6、約 4 幀滯後）後先鎖定並播出和弦；單幀抖動唔會觸發。</li>
+          <li>亦可點左右彩色按鈕，或用鍵盤：根音 <kbd>1</kbd>–<kbd>7</kbd>／<kbd>A S D F G H J</kbd>，屬性 <kbd>Q W E R T Y</kbd>，空白鍵重播。</li>
+          <li>左右面板半透明，唔會擋住手；中間爆炸框係鏡頭預覽區。</li>
+        </ol>
+        <p class="rules-foot">沒有鏡頭？面板同鍵盤一樣可以玩。</p>
+      </div>
+      <div class="rules-body hidden" id="rules-en" lang="en">
+        <ol>
+          <li>Press <strong>START CAMERA</strong> and allow the webcam (prefer the local server launcher, not file://).</li>
+          <li><strong>Left hand</strong> picks the root: fingers 1–5 = C–G; shape “6” (thumb + pinky) = A; shape “7” (thumb + index + middle tips pinched) = B.</li>
+          <li><strong>Right hand</strong> picks the quality: 1 Major · 2 Minor · 3 Maj7 · 4 m7 · 5 Dom7; shape “6” = Half-dim7.</li>
+          <li>Both hands must be stable (~4-frame hysteresis, confidence ≥ 0.6) before the chord plays; changing either side retriggers.</li>
+          <li>Or click the side pills / use keyboard: roots <kbd>1</kbd>–<kbd>7</kbd> or <kbd>A S D F G H J</kbd>, qualities <kbd>Q W E R T Y</kbd>, Space to replay.</li>
+          <li>Translucent side panels stay out of the way; the explosion frame is the camera preview.</li>
+        </ol>
+        <p class="rules-foot">No camera? Panels and keyboard still work.</p>
+      </div>
+      <button type="button" id="btn-rules-ok" class="btn-rules-ok">OK</button>
+    </div>
+  </div>
+
+  <div id="loading" class="loading hidden" aria-live="polite">
+    <div class="loading-inner">
+      <div class="spinner"></div>
+      <p id="loading-text">Loading MediaPipe…</p>
+    </div>
+  </div>
+
+  <script src="audio.js"></script>
+  <script src="app.js" defer></script>
+</body>
+</html>

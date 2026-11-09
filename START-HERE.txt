@@ -1,0 +1,3 @@
+1. Double-click open.bat
+2. Allow camera on http://127.0.0.1:5500/
+3. Keep the black window open.
