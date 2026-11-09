@@ -127,14 +127,17 @@
     if (!lockedRoot || !lockedQuality) {
       lastPlayedKey = "";
       updateChordUI();
+      if (window.ChordAudio) ChordAudio.stop();
       return;
     }
     const key = `${lockedRoot}|${lockedQuality}`;
     updateChordUI();
-    if (key === lastPlayedKey) return;
     lastPlayedKey = key;
     if (window.ChordAudio) {
-      ChordAudio.resume().then(() => ChordAudio.playChord(lockedRoot, lockedQuality));
+      ChordAudio.resume().then(() => {
+        // Ignore if hands/selection cleared while AudioContext was resuming
+        if (lastPlayedKey === key) ChordAudio.setChord(lockedRoot, lockedQuality);
+      });
     }
   }
 
@@ -234,8 +237,9 @@
 
   /**
    * Dual-hand chord state machine.
-   * Audio fires ONLY when both trackers have a non-null stable gesture AND
-   * the chord identity changed — single-hand or single-frame noise never plays.
+   * Sustained pad ONLY while both trackers have a non-null stable gesture.
+   * Chord change retargets the pad; losing either hand fades audio out.
+   * Single-hand or single-frame noise never starts audio.
    */
   function chordStateMachine() {
     const root = leftTracker.stable;
@@ -248,7 +252,11 @@
       gestureReadout.textContent = `L: ${root || lr} · R: ${quality || rr} ${lock}`;
     }
     if (!root || !quality) {
-      // Keep last locked UI for click/keyboard continuity; do not retrigger audio.
+      // Keep last locked UI for click/keyboard continuity; stop sustained audio.
+      if (lastPlayedKey) {
+        lastPlayedKey = "";
+        if (window.ChordAudio) ChordAudio.stop();
+      }
       return;
     }
     lockedRoot = root;
@@ -258,7 +266,9 @@
     if (key === lastPlayedKey) return;
     lastPlayedKey = key;
     if (window.ChordAudio) {
-      ChordAudio.resume().then(() => ChordAudio.playChord(root, quality));
+      ChordAudio.resume().then(() => {
+        if (lastPlayedKey === key) ChordAudio.setChord(root, quality);
+      });
     }
   }
 
@@ -682,7 +692,9 @@
       } else if (e.code === "Space") {
         e.preventDefault();
         if (lockedRoot && lockedQuality && window.ChordAudio) {
+          // Soft re-attack: fade, then restart the sustained pad
           ChordAudio.resume().then(() => {
+            ChordAudio.stop();
             lastPlayedKey = "";
             maybePlay();
           });
@@ -717,7 +729,7 @@
       "Hi！跟住滑鼠郁 · 撳我換提示",
       "左手：根音 1–5／六／七",
       "右手：屬性 1–5／六 = Half-dim7",
-      "雙手同時穩定（約 4 幀）先播和弦",
+      "雙手同時穩定先持續發聲（鬆開即停）",
       "撳右下角 ? 睇中英規則",
       "Hello! I follow your mouse",
       "Click ? for bilingual rules",
