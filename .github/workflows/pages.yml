@@ -9,6 +9,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  administration: write
 
 concurrency:
   group: pages
@@ -33,6 +34,17 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
+
+      - name: Enable GitHub Pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          gh api --method POST "/repos/${GITHUB_REPOSITORY}/pages" -f build_type=workflow
+          post_status=$?
+          if [ "$post_status" -ne 0 ]; then
+            gh api --method PUT "/repos/${GITHUB_REPOSITORY}/pages" -f build_type=workflow
+          fi
 
       - name: Deploy to GitHub Pages
         id: deployment
