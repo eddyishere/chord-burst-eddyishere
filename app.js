@@ -110,10 +110,31 @@
     if (text) loadingText.textContent = text;
   }
 
+  /** Lead-sheet symbols for the orange chord dock: C, Am, Cmaj7, Am7, C7, Cm7b5. */
+  function formatChordSymbol(root, quality) {
+    switch (quality) {
+      case "Major":
+        return root;
+      case "Minor":
+        return `${root}m`;
+      case "Maj7":
+        return `${root}maj7`;
+      case "m7":
+        return `${root}m7`;
+      case "Dom7":
+        return `${root}7`;
+      case "Half-dim7":
+        return `${root}m7b5`;
+      default:
+        return root && quality ? `${root} ${quality}` : "—";
+    }
+  }
+
   function updateChordUI() {
-    const label =
-      lockedRoot && lockedQuality ? `${lockedRoot} ${lockedQuality}` : "—";
-    chordNameEl.textContent = label;
+    chordNameEl.textContent =
+      lockedRoot && lockedQuality
+        ? formatChordSymbol(lockedRoot, lockedQuality)
+        : "—";
 
     document.querySelectorAll(".root-pill").forEach((btn) => {
       btn.classList.toggle("active", btn.dataset.root === lockedRoot);
