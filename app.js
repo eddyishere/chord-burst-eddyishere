@@ -481,6 +481,8 @@
     });
     video.srcObject = stream;
     await video.play();
+    // Camera start can reset iOS audio session; re-assert playback (speaker).
+    if (window.ChordAudio) await ChordAudio.resume();
     await new Promise((resolve) => {
       if (video.readyState >= 2) resolve();
       else video.onloadeddata = () => resolve();

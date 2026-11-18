@@ -27,8 +27,59 @@
   let voices = [];
   let currentKey = "";
   let stopping = false;
+  let silentEl = null;
+  let unlocked = false;
+
+  // 1-sample silent WAV. Used as a fallback unlock on older iOS
+  // that has no AudioSession API.
+  const SILENT_WAV =
+    "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
+
+  /**
+   * iPhone/iPad: Web Audio defaults to an "ambient" session, so the
+   * Ring/Silent switch (or Control Center mute) silences the speaker.
+   * Headphones bypass that, which is why sound only appears with earbuds.
+   * "playback" makes it behave like a music app and ignore the switch.
+   */
+  function setPlaybackSession() {
+    try {
+      if ("audioSession" in navigator) navigator.audioSession.type = "playback";
+    } catch (_) {}
+  }
+
+  function unlockOutput() {
+    setPlaybackSession();
+    if (!silentEl) {
+      silentEl = new Audio(SILENT_WAV);
+      silentEl.loop = true;
+      silentEl.preload = "auto";
+      silentEl.playsInline = true;
+      silentEl.setAttribute("playsinline", "true");
+      silentEl.volume = 0.01;
+    }
+    const play = silentEl.play();
+    if (play && typeof play.then === "function") {
+      play
+        .then(() => {
+          unlocked = true;
+          // Modern Safari no longer needs the silent loop once the
+          // session is playback; pause it to avoid a Now Playing bar.
+          if ("audioSession" in navigator) {
+            try {
+              silentEl.pause();
+              silentEl.currentTime = 0;
+              silentEl.loop = false;
+            } catch (_) {}
+          }
+        })
+        .catch(() => {});
+    } else {
+      unlocked = true;
+    }
+  }
 
   function ensureCtx() {
+    setPlaybackSession();
     if (!ctx) {
       const AC = window.AudioContext || window.webkitAudioContext;
       ctx = new AC();
@@ -40,10 +91,25 @@
   }
 
   async function resume() {
+    unlockOutput();
     ensureCtx();
+    if (ctx.state === "suspended") await ctx.resume();
+    setPlaybackSession();
     if (ctx.state === "suspended") await ctx.resume();
     return ctx;
   }
+
+  function onForeground() {
+    if (document.visibilityState && document.visibilityState !== "visible") return;
+    setPlaybackSession();
+    if (ctx && ctx.state === "suspended") {
+      ctx.resume().catch(() => {});
+    }
+  }
+
+  document.addEventListener("visibilitychange", onForeground);
+  window.addEventListener("pageshow", onForeground);
+  window.addEventListener("focus", onForeground);
 
   function midiToHz(midi) {
     return 440 * Math.pow(2, (midi - 69) / 12);
